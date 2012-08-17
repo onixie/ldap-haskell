@@ -43,6 +43,11 @@ ldapSetVersion3 cld =
     with ((#{const LDAP_VERSION3})::LDAPInt) $ \copt ->
     ldap_set_option cld #{const LDAP_OPT_PROTOCOL_VERSION} (castPtr copt)
 
+ldapSetRestart :: LDAPPtr -> IO LDAPInt
+ldapSetRestart cld =
+    with ((#{const LDAP_OPT_ON})::LDAPInt) $ \copt ->
+    ldap_set_option cld #{const LDAP_OPT_RESTART} (castPtr copt)
+
 {- | Preferred way to initialize a LDAP connection. 
 The default port is given in 'LDAP.Constants.ldapPort'.
 
@@ -55,6 +60,7 @@ ldapInit host port =
        do cld <- cldap_init cs port
           rv <- fromLDAPPtr "ldapInit" (return cld)
           ldapSetVersion3 cld
+          ldapSetRestart cld
           return rv
 
 {- | Like 'ldapInit', but establish network connection immediately. -}
@@ -63,7 +69,10 @@ ldapOpen :: String              -- ^ Host
             -> IO LDAP          -- ^ New LDAP Obj
 ldapOpen host port =
     withCString host (\cs ->
-                      fromLDAPPtr "ldapOpen" $ cldap_open cs port)
+        do cld <- cldap_open cs port
+           rv <- fromLDAPPtr "ldapOpen" (return cld)
+           ldapSetRestart cld
+           return rv)
 
 {- | Like 'ldapInit', but accepts a URI (or whitespace/comma separated
 list of URIs) which can contain a schema, a host and a port.  Besides
@@ -79,6 +88,7 @@ ldapInitialize uri =
     ldap <- fromLDAPPtr "ldapInitialize" (return p)
     _ <- checkLE "ldapInitialize" ldap (return r)
     ldapSetVersion3 p
+    ldapSetRestart p
     return ldap
 
 
