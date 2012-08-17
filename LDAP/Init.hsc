@@ -27,6 +27,7 @@ module LDAP.Init(ldapOpen,
 where
 
 import Foreign.Ptr
+import Foreign.ForeignPtr
 import Foreign.C.String
 import Foreign.Marshal.Alloc
 import Foreign.Storable
@@ -57,10 +58,10 @@ ldapInit :: String              -- ^ Host
          -> IO LDAP             -- ^ New LDAP Obj
 ldapInit host port =
     withCString host $ \cs ->
-       do cld <- cldap_init cs port
-          rv <- fromLDAPPtr "ldapInit" (return cld)
-          ldapSetVersion3 cld
-          ldapSetRestart cld
+       do rv <- fromLDAPPtr "ldapInit" (cldap_init cs port)
+          withForeignPtr rv $ \cld -> do
+              ldapSetVersion3 cld
+              ldapSetRestart cld
           return rv
 
 {- | Like 'ldapInit', but establish network connection immediately. -}
@@ -69,9 +70,8 @@ ldapOpen :: String              -- ^ Host
             -> IO LDAP          -- ^ New LDAP Obj
 ldapOpen host port =
     withCString host (\cs ->
-        do cld <- cldap_open cs port
-           rv <- fromLDAPPtr "ldapOpen" (return cld)
-           ldapSetRestart cld
+        do rv <- fromLDAPPtr "ldapOpen" (cldap_open cs port)
+           withForeignPtr rv ldapSetRestart
            return rv)
 
 {- | Like 'ldapInit', but accepts a URI (or whitespace/comma separated
@@ -84,11 +84,11 @@ ldapInitialize uri =
     withCString uri $ \cs ->
     alloca $ \pp -> do
     r <- ldap_initialize pp cs
-    p <- peek pp
-    ldap <- fromLDAPPtr "ldapInitialize" (return p)
+    ldap <- fromLDAPPtr "ldapInitialize" (peek pp)
     _ <- checkLE "ldapInitialize" ldap (return r)
-    ldapSetVersion3 p
-    ldapSetRestart p
+    withForeignPtr ldap $ \p -> do
+        ldapSetVersion3 p
+        ldapSetRestart p
     return ldap
 
 
