@@ -1,11 +1,11 @@
 Name: LDAP
 Version: 0.6.7
 License: BSD3
-Maintainer: John Goerzen <jgoerzen@complete.org>
-Author: John Goerzen
+Maintainer: Edward Z. Yang <ezyang@mit.edu>
+Author: John Goerzen, Edward Z. Yang
 Stability: Beta
-Copyright: Copyright (c) 2005-2010 John Goerzen
-homepage: http://software.complete.org/ldap-haskell
+Copyright: Copyright (c) 2005-2012 John Goerzen, Edward Z. Yang
+homepage: https://github.com/ezyang/ldap-haskell
 Category: Network
 Synopsis: Haskell binding for C LDAP API
 Description: This package provides LDAP interface code for Haskell programs,
