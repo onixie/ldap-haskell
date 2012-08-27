@@ -6,12 +6,17 @@ This code is under a 3-clause BSD license; see COPYING for details.
 
 module Tests(tests) where
 import Test.HUnit
-import qualified Inittest
+import Control.Exception
+import LDAP
 
-test1 = TestCase ("x" @=? "x")
+testSearchNoAttrs = TestCase $ do
+    -- A sample public LDAP server
+    ldap <- ldapInitialize "ldap://scripts.mit.edu/"
+    r <- ldapSearch ldap (Just "ou=People,dc=scripts,dc=mit,dc=edu") LdapScopeOnelevel Nothing LDAPNoAttrs True
+    evaluate (length (show r)) -- poor mans rnf
+    return ()
 
-tests = TestList [TestLabel "test1" test1,
-                  TestLabel "init" Inittest.tests
+tests = TestList [TestLabel "testSearchNoAttrs" testSearchNoAttrs
                  ]
 
 

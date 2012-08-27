@@ -1,0 +1,7 @@
+*.hi
+*.o
+dist
+TAGS
+tags
+testsrc/runtests
+setup
