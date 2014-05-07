@@ -1,10 +1,10 @@
 Name: LDAP
-Version: 0.6.9
+Version: 0.6.10
 License: BSD3
 Maintainer: Edward Z. Yang <ezyang@mit.edu>
 Author: John Goerzen, Edward Z. Yang
 Stability: Beta
-Copyright: Copyright (c) 2005-2012 John Goerzen, Edward Z. Yang
+Copyright: Copyright (c) 2005-2014 John Goerzen, Edward Z. Yang
 homepage: https://github.com/ezyang/ldap-haskell
 Category: Network
 Synopsis: Haskell binding for C LDAP API
