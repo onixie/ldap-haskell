@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {- -*- Mode: haskell; -*-
 Haskell LDAP Interface
 Copyright (C) 2005-2009 John Goerzen <jgoerzen@complete.org>
@@ -47,6 +48,7 @@ data LDAPException = LDAPException
      description :: String,     -- ^ Description of error
      caller :: String           -- ^ Calling function
     }
+    deriving (Typeable)
 instance Show LDAPException where
     show x = caller x ++ ": LDAPException " ++ show (code x) ++ 
              "(" ++ show (fromEnum $ code x) ++ "): " ++
@@ -57,12 +59,6 @@ instance Eq LDAPException where
 
 instance Ord LDAPException where
     compare x y = compare (code x) (code y)
-
-instance Typeable LDAPException where
-    typeOf _ = mkTyConApp ldapExceptionTc []
-
-ldapExceptionTc :: TyCon
-ldapExceptionTc = mkTyCon "LDAP.LDAPException"
 
 #if __GLASGOW_HASKELL__ >= 610
 instance Exception LDAPException where
