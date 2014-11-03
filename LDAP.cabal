@@ -37,7 +37,10 @@ Library
 
   build-depends: base >= 4 && <5
 
-  Extra-Libraries: ldap, lber
+  if os(windows)
+    Extra-Libraries: wldap32
+  else
+    Extra-Libraries: ldap, lber
 
   GHC-Options: -O2
   -- CC-Options: -Iglue
@@ -53,7 +56,10 @@ Executable runtests
     Buildable: True
   else
     Buildable: False
-  Extra-Libraries: ldap, lber
+  if os(windows)
+    Extra-Libraries: wldap32
+  else
+    Extra-Libraries: ldap, lber
   Main-Is: runtests.hs
   if os(openbsd)
     CC-Options: -DLDAP_X_PROXY_AUTHZ_FAILURE=LDAP_PROXY_AUTHZ_FAILURE
