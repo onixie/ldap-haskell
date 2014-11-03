@@ -1,6 +1,6 @@
 {- -*- Mode: haskell; -*-
 Haskell LDAP Interface
-Copyright (C) 2005 John Goerzen <jgoerzen@complete.org>
+Copyright (C) 2005, 2014 John Goerzen <jgoerzen@complete.org>
 
 This code is under a 3-clause BSD license; see COPYING for details.
 -}
@@ -35,13 +35,18 @@ import LDAP.Data
 import Foreign
 import Foreign.C.String
 #if (__GLASGOW_HASKELL__>=705)
-import Foreign.C.Types(CInt(..))
+import Foreign.C.Types(CInt(..), CULong(..))
 #endif
 import LDAP.Result
 import Control.Exception(finally)
 import Data.Bits
 
-#include <ldap.h>
+#if defined(mingw32_BUILD_OS)
+#include "windows.h"
+#include "winber.h"
+#else
+#include "ldap.h"
+#endif
 
 data LDAPMod = LDAPMod {modOp :: LDAPModOp -- ^ Type of operation to perform
                        ,modType :: String -- ^ Name of attribute to edit
@@ -122,11 +127,11 @@ freeCLDAPMod ptr =
 withCLDAPModArr0 :: [LDAPMod] -> (Ptr (Ptr CLDAPMod) -> IO a) -> IO a
 withCLDAPModArr0 = withAnyArr0 newCLDAPMod freeCLDAPMod
 
-foreign import ccall unsafe "ldap.h ldap_modify_s"
-  ldap_modify_s :: LDAPPtr -> CString -> Ptr (Ptr CLDAPMod) -> IO LDAPInt
+foreign import ccall unsafe "ldap_modify_s"
+  ldap_modify_s :: LDAPPtr -> CString -> Ptr (Ptr CLDAPMod) -> IO CRetCode
 
-foreign import ccall unsafe "ldap.h ldap_delete_s"
-  ldap_delete_s :: LDAPPtr -> CString -> IO LDAPInt
+foreign import ccall unsafe "ldap_delete_s"
+  ldap_delete_s :: LDAPPtr -> CString -> IO CRetCode
 
-foreign import ccall unsafe "ldap.h ldap_add_s"
-  ldap_add_s :: LDAPPtr -> CString -> Ptr (Ptr CLDAPMod) -> IO LDAPInt
+foreign import ccall unsafe "ldap_add_s"
+  ldap_add_s :: LDAPPtr -> CString -> Ptr (Ptr CLDAPMod) -> IO CRetCode

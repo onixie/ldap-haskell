@@ -1,6 +1,6 @@
 {- -*- Mode: haskell; -*-
 Haskell LDAP Interface
-Copyright (C) 2005 John Goerzen <jgoerzen@complete.org>
+Copyright (C) 2005, 2014 John Goerzen <jgoerzen@complete.org>
 
 This code is under a 3-clause BSD license; see COPYING for details.
 -}
@@ -44,7 +44,12 @@ import Foreign.ForeignPtr
 import Foreign
 import Foreign.C.Types
 
-#include <ldap.h>
+#if defined(mingw32_BUILD_OS)
+#include "windows.h"
+#include "winber.h"
+#else
+#include "ldap.h"
+#endif
 
 {- FIXME frmo python: 
 
@@ -55,13 +60,13 @@ import Foreign.C.Types
 
 {- | Check the return value.  If it's something other than 
 'LDAP.Constants.ldapSuccess', raise an LDAP exception. -}
-checkLE :: String -> LDAP -> IO LDAPInt -> IO LDAPInt
+checkLE :: String -> LDAP -> IO CRetCode -> IO CRetCode
 checkLE = checkLEe (\r -> r == fromIntegral (fromEnum LdapSuccess))
 
-checkLEn1 :: String -> LDAP -> IO LDAPInt -> IO LDAPInt
+checkLEn1 :: String -> LDAP -> IO CRetCode -> IO CRetCode
 checkLEn1 = checkLEe (\r -> r /= -1)
 
-checkLEe :: (LDAPInt -> Bool) -> String -> LDAP -> IO LDAPInt -> IO LDAPInt
+checkLEe :: (CRetCode -> Bool) -> String -> LDAP -> IO CRetCode -> IO CRetCode
 checkLEe test callername ld action =
     do result <- action
        if test result
@@ -112,11 +117,11 @@ maybeWithLDAPPtr Nothing func = func nullPtr
 maybeWithLDAPPtr (Just x) y = withLDAPPtr x y
 
 {- | Returns an int, doesn't raise exceptions on err (just crashes) -}
-ldapGetOptionIntNoEc :: LDAP -> LDAPOptionCode -> IO LDAPInt
+ldapGetOptionIntNoEc :: LDAP -> LDAPOptionCode -> IO CRetCode
 ldapGetOptionIntNoEc ld oc =
     withLDAPPtr ld (\pld -> alloca (f pld))
     where oci = fromIntegral $ fromEnum oc
-          f pld (ptr::Ptr LDAPInt) =
+          f pld (ptr::Ptr CRetCode) =
               do res <- ldap_get_option pld oci (castPtr ptr)
                  if res /= 0
                     then fail $ "Crash in int ldap_get_option, code " ++ show res
@@ -188,17 +193,17 @@ freeHSBerval ptr =
        free cstr
        free ptr
 
-foreign import ccall unsafe "ldap.h &ldap_unbind"
+foreign import ccall unsafe "&ldap_unbind"
   ldap_unbind :: FunPtr (LDAPPtr -> IO ()) -- ldap_unbind, ignoring retval
 
-foreign import ccall unsafe "ldap.h ldap_err2string"
-  ldap_err2string :: LDAPInt -> IO CString
+foreign import ccall unsafe "ldap_err2string"
+  ldap_err2string :: CRetCode -> IO CString
 
-foreign import ccall unsafe "ldap.h ldap_get_option"
-  ldap_get_option :: LDAPPtr -> LDAPInt -> Ptr () -> IO LDAPInt
+foreign import ccall unsafe "ldap_get_option"
+  ldap_get_option :: LDAPPtr -> COption -> Ptr () -> IO CRetCode
 
-foreign import ccall unsafe "ldap.h &ldap_memfree"
+foreign import ccall unsafe "&ldap_memfree"
   ldap_memfree_call :: FunPtr (CString -> IO ())
 
-foreign import ccall unsafe "ldap.h ldap_memfree"
+foreign import ccall unsafe "ldap_memfree"
   ldap_memfree :: CString -> IO ()

@@ -1,6 +1,6 @@
 {- -*- Mode: haskell; -*-
 Haskell LDAP Interface
-Copyright (C) 2005 John Goerzen <jgoerzen@complete.org>
+Copyright (C) 2005, 2014 John Goerzen <jgoerzen@complete.org>
 
 This code is under a 3-clause BSD license; see COPYING for details.
 -}
@@ -33,12 +33,17 @@ import LDAP.Data
 import Foreign
 import Foreign.C.String
 #if (__GLASGOW_HASKELL__>=705)
-import Foreign.C.Types(CInt(..))
+import Foreign.C.Types(CInt(..), CULong(..))
 #endif
 import LDAP.Result
 import Control.Exception(finally)
 
-#include <ldap.h>
+#if defined(mingw32_BUILD_OS)
+#include "windows.h"
+#include "winber.h"
+#else
+#include "ldap.h"
+#endif
 
 {- | Defines what attributes to return with the search result. -}
 data SearchAttributes =
@@ -48,8 +53,13 @@ data SearchAttributes =
    deriving (Eq, Show)
 
 sa2sl :: SearchAttributes -> [String]
+#if defined(mingw32_BUILD_OS)
+sa2sl LDAPNoAttrs = [ "" ]
+sa2sl LDAPAllUserAttrs = [ "" ]
+#else
 sa2sl LDAPNoAttrs = [ #{const_str LDAP_NO_ATTRS} ]
 sa2sl LDAPAllUserAttrs = [ #{const_str LDAP_ALL_USER_ATTRIBUTES} ]
+#endif
 sa2sl (LDAPAttrList x) = x
 
 data LDAPEntry = LDAPEntry 
@@ -80,7 +90,7 @@ ldapSearch ld base scope filter attrs attrsonly =
                     )
                   )
 
-procSR :: LDAP -> Ptr CLDAP -> LDAPInt -> IO [LDAPEntry]
+procSR :: LDAP -> Ptr CLDAP -> CMsgID -> IO [LDAPEntry]
 procSR ld cld msgid =
   do res1 <- ldap_1result ld msgid
      --putStrLn "Have 1result"
@@ -144,26 +154,23 @@ procberarr pbv =
     do bvl <- peekArray0 nullPtr pbv
        mapM bv2str bvl
 
-foreign import ccall unsafe "ldap.h ldap_get_dn"
+foreign import ccall unsafe "ldap_get_dn"
   ldap_get_dn :: LDAPPtr -> Ptr CLDAPMessage -> IO CString
 
-foreign import ccall unsafe "ldap.h ldap_get_values_len"
+foreign import ccall unsafe "ldap_get_values_len"
   ldap_get_values_len :: LDAPPtr -> Ptr CLDAPMessage -> CString -> IO (Ptr (Ptr Berval))
 
-foreign import ccall unsafe "ldap.h ldap_value_free_len"
+foreign import ccall unsafe "ldap_value_free_len"
   ldap_value_free_len :: Ptr (Ptr Berval) -> IO ()
 
-foreign import ccall unsafe "ldap.h ldap_search"
-  ldap_search :: LDAPPtr -> CString -> LDAPInt -> CString -> Ptr CString ->
-                 LDAPInt -> IO LDAPInt
+foreign import ccall unsafe "ldap_search"
+  ldap_search :: LDAPPtr -> CString -> CScope -> CString -> Ptr CString -> CAttrsOnly -> IO CRetCode
 
-foreign import ccall unsafe "ldap.h ldap_first_entry"
+foreign import ccall unsafe "ldap_first_entry"
   ldap_first_entry :: LDAPPtr -> Ptr CLDAPMessage -> IO (Ptr CLDAPMessage)
 
-foreign import ccall unsafe "ldap.h ldap_first_attribute"
-  ldap_first_attribute :: LDAPPtr -> Ptr CLDAPMessage -> Ptr (Ptr BerElement) 
-                       -> IO CString
+foreign import ccall unsafe "ldap_first_attribute"
+  ldap_first_attribute :: LDAPPtr -> Ptr CLDAPMessage -> Ptr (Ptr BerElement) -> IO CString
 
-foreign import ccall unsafe "ldap.h ldap_next_attribute"
-  ldap_next_attribute :: LDAPPtr -> Ptr CLDAPMessage -> Ptr BerElement
-                       -> IO CString
+foreign import ccall unsafe "ldap_next_attribute"
+  ldap_next_attribute :: LDAPPtr -> Ptr CLDAPMessage -> Ptr BerElement -> IO CString

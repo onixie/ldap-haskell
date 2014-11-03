@@ -1,6 +1,6 @@
 {- -*- Mode: haskell; -*-
 Haskell LDAP Interface
-Copyright (C) 2005 John Goerzen <jgoerzen@complete.org>
+Copyright (C) 2005, 2014 John Goerzen <jgoerzen@complete.org>
 
 This code is under a 3-clause BSD license; see COPYING for details.
 -}
@@ -28,16 +28,21 @@ import LDAP.Utils
 import LDAP.Types
 import Foreign
 #if (__GLASGOW_HASKELL__>=705)
-import Foreign.C.Types(CInt(..))
+import Foreign.C.Types(CInt(..), CULong(..))
 #endif
 
-#include <ldap.h>
+#if defined(mingw32_BUILD_OS)
+#include "windows.h"
+#include "winber.h"
+#else
+#include "ldap.h"
+#endif
 
 data CLDAPMessage
 type LDAPMessage = ForeignPtr CLDAPMessage
 
 {- | Get 1 result from an operation. -}
-ldap_1result :: LDAP -> LDAPInt -> IO (LDAPMessage)
+ldap_1result :: LDAP -> CMsgID -> IO (LDAPMessage)
 ldap_1result ld msgid =
     withLDAPPtr ld (\cld ->
     alloca (f cld)
@@ -54,8 +59,9 @@ fromldmptr caller action =
           then fail (caller ++ ": got null LDAPMessage pointer")
           else newForeignPtr ldap_msgfree_call ptr
 
-foreign import ccall unsafe "ldap.h ldap_result"
-  ldap_result :: LDAPPtr -> LDAPInt -> LDAPInt -> Ptr () -> Ptr (Ptr CLDAPMessage) -> IO LDAPInt
 
-foreign import ccall unsafe "ldap.h &ldap_msgfree"
+foreign import ccall unsafe "ldap_result"
+  ldap_result :: LDAPPtr -> CMsgID -> CAll -> Ptr () -> Ptr (Ptr CLDAPMessage) -> IO CRetCode
+
+foreign import ccall unsafe "&ldap_msgfree"
   ldap_msgfree_call :: FunPtr (Ptr CLDAPMessage -> IO ())
