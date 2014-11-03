@@ -75,6 +75,11 @@ checkLEe test callername ld action =
                   let hserror = toEnum (fromIntegral errornum)
                   err2string <- (ldap_err2string errornum >>= peekCString)
                   objstring <- ldapGetOptionStrNoEc ld LdapOptErrorString
+#if defined(mingw32_BUILD_OS)
+                                                    False
+#else
+                                                    True
+#endif
                   let desc = case objstring of
                                              Nothing -> err2string
                                              Just x -> err2string ++ " (" ++
@@ -128,8 +133,8 @@ ldapGetOptionIntNoEc ld oc =
                     else peek ptr
 
 {- | Returns a string, doesn't raise exceptions on err (just crashes) -}
-ldapGetOptionStrNoEc :: LDAP -> LDAPOptionCode -> IO (Maybe String)
-ldapGetOptionStrNoEc ld oc =
+ldapGetOptionStrNoEc :: LDAP -> LDAPOptionCode -> Bool -> IO (Maybe String)
+ldapGetOptionStrNoEc ld oc af =
     withLDAPPtr ld (\pld -> alloca (f pld))
     where
     oci = fromEnum oc
@@ -138,13 +143,19 @@ ldapGetOptionStrNoEc ld oc =
            if res /= 0
               then fail $ "Crash in str ldap_get_option, code " ++ show res
               else do cstr <- peek ptr
-                      fp <- wrap_memfree cstr
-                      withForeignPtr fp (\cs ->
-                       do if cs == nullPtr
-                             then return Nothing
-                             else do hstr <- peekCString cs
-                                     return $ Just hstr
-                                        )
+                      if af
+                         then do fp <- wrap_memfree cstr
+                                 withForeignPtr fp (\cs ->
+                                   if cs == nullPtr
+                                      then return Nothing
+                                      else do hstr <- peekCString cs
+                                              return $ Just hstr
+                                  )
+                         else
+                           if cstr == nullPtr
+                              then return Nothing
+                              else do hstr <- peekCString cstr
+                                      return $ Just hstr
 
 wrap_memfree :: CString -> IO (ForeignPtr Foreign.C.Types.CChar)
 wrap_memfree p = newForeignPtr ldap_memfree_call p
