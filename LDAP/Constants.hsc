@@ -25,11 +25,12 @@ where
 import Foreign.C.Types
 import LDAP.Types
 
-#if defined(mingw32_BUILD_OS)
-#include "windows.h"
-#include "winber.h"
-#else
+#if !defined(mingw32_BUILD_OS)
 #include "ldap.h"
+#else
+#include "windows.h"
+#include "winldap.h"
+#include "winber.h"
 #endif
 
 #enum CPort, ,LDAP_PORT
@@ -43,9 +44,7 @@ import LDAP.Types
       LDAP_FILTER_LE, LDAP_FILTER_PRESENT, LDAP_FILTER_APPROX,\
       LDAP_SUBSTRING_ANY, LDAP_SUBSTRING_FINAL, LDAP_SUBSTRING_INITIAL
 
-#if defined(mingw32_BUILD_OS)
-#enum CPort, , LDAP_SSL_PORT
-#else
+#if !defined(mingw32_BUILD_OS)
 #enum CPort, , LDAPS_PORT
 #enum LDAPInt, , LDAP_CONTROL_VALUESRETURNFILTER, LDAP_CONTROL_SUBENTRIES, \
       LDAP_CONTROL_NOOP, LDAP_CONTROL_MANAGEDSAIT, LDAP_CONTROL_PROXY_AUTHZ, \
@@ -53,4 +52,6 @@ import LDAP.Types
       LDAP_NOTICE_OF_DISCONNECTION, LDAP_NOTICE_DISCONNECT
 #enum BERTag, , LDAP_FILTER_EXT, LDAP_FILTER_EXT_OID, LDAP_FILTER_EXT_TYPE,\
       LDAP_FILTER_EXT_VALUE,LDAP_FILTER_EXT_DNATTRS
+#else
+#enum CPort, , LDAP_SSL_PORT
 #endif

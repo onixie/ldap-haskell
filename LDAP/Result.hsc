@@ -31,11 +31,12 @@ import Foreign
 import Foreign.C.Types(CInt(..), CULong(..))
 #endif
 
-#if defined(mingw32_BUILD_OS)
-#include "windows.h"
-#include "winber.h"
-#else
+#if !defined(mingw32_BUILD_OS)
 #include "ldap.h"
+#else
+#include "windows.h"
+#include "winldap.h"
+#include "winber.h"
 #endif
 
 data CLDAPMessage

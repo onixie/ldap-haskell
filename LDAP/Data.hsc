@@ -16,11 +16,12 @@ Written by John Goerzen, jgoerzen\@complete.org
 
 module LDAP.Data (module LDAP.Data) where
 
-#if defined(mingw32_BUILD_OS)
-#include "windows.h"
-#include "winber.h"
-#else
+#if !defined(mingw32_BUILD_OS)
 #include "ldap.h"
+#else
+#include "windows.h"
+#include "winldap.h"
+#include "winber.h"
 #endif
 
 data LDAPReturnCode =

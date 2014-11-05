@@ -37,11 +37,12 @@ import Foreign.ForeignPtr
 import LDAP.TypesLL
 import LDAP.Data
 
-#if defined(mingw32_BUILD_OS)
-#include "windows.h"
-#include "winber.h"
-#else
+#if !defined(mingw32_BUILD_OS)
 #include "ldap.h"
+#else
+#include "windows.h"
+#include "winldap.h"
+#include "winber.h"
 #endif
 
 {- | Main LDAP object type.

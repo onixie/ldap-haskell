@@ -38,11 +38,12 @@ import Foreign.C.Types
 import LDAP.Utils
 import Foreign.Marshal.Utils
 
-#if defined(mingw32_BUILD_OS)
-#include "windows.h"
-#include "winber.h"
-#else
+#if !defined(mingw32_BUILD_OS)
 #include "ldap.h"
+#else
+#include "windows.h"
+#include "winldap.h"
+#include "winber.h"
 #endif
 
 
@@ -51,10 +52,12 @@ ldapSetVersion3 cld =
     with ((#{const LDAP_VERSION3})::CInt) $ \copt ->
     ldap_set_option cld #{const LDAP_OPT_PROTOCOL_VERSION} (castPtr copt)
 
+#if !defined(mingw32_BUILD_OS)
 ldapSetRestart :: LDAPPtr -> IO CRetCode
 ldapSetRestart cld =
     with ((#{const LDAP_OPT_ON})::CInt) $ \copt ->
     ldap_set_option cld #{const LDAP_OPT_RESTART} (castPtr copt)
+#endif
 
 {- | Preferred way to initialize a LDAP connection. 
 The default port is given in 'LDAP.Constants.ldapPort'.
@@ -68,7 +71,9 @@ ldapInit host port =
        do rv <- fromLDAPPtr "ldapInit" (cldap_init cs port)
           withForeignPtr rv $ \cld -> do
               ldapSetVersion3 cld
+#if !defined(mingw32_BUILD_OS)
               ldapSetRestart cld
+#endif
           return rv
 
 {- | Like 'ldapInit', but establish network connection immediately. -}
@@ -78,7 +83,9 @@ ldapOpen :: String              -- ^ Host
 ldapOpen host port =
     withCString host (\cs ->
         do rv <- fromLDAPPtr "ldapOpen" (cldap_open cs port)
+#if !defined(mingw32_BUILD_OS)
            withForeignPtr rv ldapSetRestart
+#endif
            return rv)
 
 #if !defined(mingw32_BUILD_OS)

@@ -38,11 +38,12 @@ import Foreign.C.Types(CInt(..), CULong(..))
 import LDAP.Result
 import Control.Exception(finally)
 
-#if defined(mingw32_BUILD_OS)
-#include "windows.h"
-#include "winber.h"
-#else
+#if !defined(mingw32_BUILD_OS)
 #include "ldap.h"
+#else
+#include "windows.h"
+#include "winldap.h"
+#include "winber.h"
 #endif
 
 {- | Defines what attributes to return with the search result. -}
@@ -53,12 +54,12 @@ data SearchAttributes =
    deriving (Eq, Show)
 
 sa2sl :: SearchAttributes -> [String]
-#if defined(mingw32_BUILD_OS)
-sa2sl LDAPNoAttrs = [ "" ]
-sa2sl LDAPAllUserAttrs = [ "" ]
-#else
+#if !defined(mingw32_BUILD_OS)
 sa2sl LDAPNoAttrs = [ #{const_str LDAP_NO_ATTRS} ]
 sa2sl LDAPAllUserAttrs = [ #{const_str LDAP_ALL_USER_ATTRIBUTES} ]
+#else
+sa2sl LDAPNoAttrs = [ "" ]
+sa2sl LDAPAllUserAttrs = [ "" ]
 #endif
 sa2sl (LDAPAttrList x) = x
 

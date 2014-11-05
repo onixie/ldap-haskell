@@ -44,11 +44,12 @@ import Foreign.ForeignPtr
 import Foreign
 import Foreign.C.Types
 
-#if defined(mingw32_BUILD_OS)
-#include "windows.h"
-#include "winber.h"
-#else
+#if !defined(mingw32_BUILD_OS)
 #include "ldap.h"
+#else
+#include "windows.h"
+#include "winldap.h"
+#include "winber.h"
 #endif
 
 {- FIXME frmo python: 
@@ -75,10 +76,10 @@ checkLEe test callername ld action =
                   let hserror = toEnum (fromIntegral errornum)
                   err2string <- (ldap_err2string errornum >>= peekCString)
                   objstring <- ldapGetOptionStrNoEc ld LdapOptErrorString
-#if defined(mingw32_BUILD_OS)
-                                                    False
-#else
+#if !defined(mingw32_BUILD_OS)
                                                     True
+#else
+                                                    False
 #endif
                   let desc = case objstring of
                                              Nothing -> err2string

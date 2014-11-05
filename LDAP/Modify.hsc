@@ -41,11 +41,12 @@ import LDAP.Result
 import Control.Exception(finally)
 import Data.Bits
 
-#if defined(mingw32_BUILD_OS)
-#include "windows.h"
-#include "winber.h"
-#else
+#if !defined(mingw32_BUILD_OS)
 #include "ldap.h"
+#else
+#include "windows.h"
+#include "winldap.h"
+#include "winber.h"
 #endif
 
 data LDAPMod = LDAPMod {modOp :: LDAPModOp -- ^ Type of operation to perform
