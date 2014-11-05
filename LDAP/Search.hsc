@@ -22,7 +22,8 @@ Written by John Goerzen, jgoerzen\@complete.org
 
 module LDAP.Search (SearchAttributes(..),
                     LDAPEntry(..), LDAPScope(..),
-                    ldapSearch, 
+                    ldapSearch,
+                    withCStringArr0
                    )
 where
 
@@ -58,8 +59,8 @@ sa2sl :: SearchAttributes -> [String]
 sa2sl LDAPNoAttrs = [ #{const_str LDAP_NO_ATTRS} ]
 sa2sl LDAPAllUserAttrs = [ #{const_str LDAP_ALL_USER_ATTRIBUTES} ]
 #else
-sa2sl LDAPNoAttrs = [ "" ]
-sa2sl LDAPAllUserAttrs = [ "" ]
+sa2sl LDAPNoAttrs = []
+sa2sl LDAPAllUserAttrs = []
 #endif
 sa2sl (LDAPAttrList x) = x
 
@@ -84,7 +85,15 @@ ldapSearch ld base scope filter attrs attrsonly =
   withCStringArr0 (sa2sl attrs) (\cattrs ->
   do msgid <- checkLEn1 "ldapSearch" ld $
               ldap_search cld cbase (fromIntegral $ fromEnum scope)
+#if !defined(mingw32_BUILD_OS)
                           cfilter cattrs (fromBool attrsonly)
+#else
+                          cfilter
+                          (case attrs of
+                               LDAPAllUserAttrs -> nullPtr
+                               otherwise        -> cattrs)
+                          (fromBool attrsonly)
+#endif
      procSR ld cld msgid
                                )
                       )
